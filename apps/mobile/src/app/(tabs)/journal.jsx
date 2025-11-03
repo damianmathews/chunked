@@ -366,8 +366,19 @@ export default function JournalScreen() {
                       const isBogeyPlus = hole.shots.length > hole.par + 1;
 
                       return (
-                        <View
+                        <TouchableOpacity
                           key={hole.number}
+                          onPress={() => {
+                            Haptics.selectionAsync();
+                            router.push({
+                              pathname: "/hole-detail",
+                              params: {
+                                holeNumber: hole.number,
+                                roundId: round.id,
+                                isCurrentRound: "false",
+                              },
+                            });
+                          }}
                           style={{
                             flexDirection: "row",
                             justifyContent: "space-between",
@@ -382,6 +393,7 @@ export default function JournalScreen() {
                                 : 0,
                             borderBottomColor: theme.colors.borderLight,
                           }}
+                          activeOpacity={0.7}
                         >
                           <View>
                             <Text
@@ -430,7 +442,7 @@ export default function JournalScreen() {
                               {holeScore}
                             </Text>
                           </View>
-                        </View>
+                        </TouchableOpacity>
                       );
                     })}
 

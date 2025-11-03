@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createRealisticSampleRounds } from "@/utils/sampleRoundsGenerator";
 
 const RoundContext = createContext();
 
@@ -16,6 +17,7 @@ export const CLUBS = [
   "Driver",
   "3 Wood",
   "5 Wood",
+  "Hybrid",
   "3 Iron",
   "4 Iron",
   "5 Iron",
@@ -24,6 +26,8 @@ export const CLUBS = [
   "8 Iron",
   "9 Iron",
   "Pitching Wedge",
+  "Gap Wedge",
+  "Approach Wedge",
   "Sand Wedge",
   "Lob Wedge",
   "Putter",
@@ -135,6 +139,32 @@ const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
+// Newton Commonwealth Golf Course - White Tees
+const NEWTON_COMMONWEALTH_COURSE = {
+  id: "newton_commonwealth",
+  name: "Newton Commonwealth Golf Course",
+  holes: [
+    { hole: 1, par: 4, yardage: 252 },
+    { hole: 2, par: 5, yardage: 476 },
+    { hole: 3, par: 3, yardage: 179 },
+    { hole: 4, par: 3, yardage: 110 },
+    { hole: 5, par: 5, yardage: 435 },
+    { hole: 6, par: 4, yardage: 255 },
+    { hole: 7, par: 3, yardage: 162 },
+    { hole: 8, par: 5, yardage: 473 },
+    { hole: 9, par: 3, yardage: 180 },
+    { hole: 10, par: 4, yardage: 259 },
+    { hole: 11, par: 4, yardage: 295 },
+    { hole: 12, par: 3, yardage: 148 },
+    { hole: 13, par: 4, yardage: 263 },
+    { hole: 14, par: 4, yardage: 231 },
+    { hole: 15, par: 5, yardage: 422 },
+    { hole: 16, par: 3, yardage: 130 },
+    { hole: 17, par: 4, yardage: 367 },
+    { hole: 18, par: 4, yardage: 355 },
+  ],
+};
+
 const createDefaultHoles = (courseHoles = []) => {
   const holes = [];
   for (let i = 1; i <= 18; i++) {
@@ -149,188 +179,10 @@ const createDefaultHoles = (courseHoles = []) => {
   return holes;
 };
 
-const createSampleData = () => {
-  const sampleRounds = [
-    {
-      id: generateId(),
-      date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-      courseId: "sample_course_1",
-      courseName: "Chunked Hills Golf Club",
-      tee: "White",
-      finishedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      holes: [
-        {
-          number: 1,
-          par: 4,
-          distance: 380,
-          shots: [
-            {
-              club: "Driver",
-              qualities: ["slice"],
-              note: "Way right into the trees",
-            },
-            {
-              club: "7 Iron",
-              qualities: ["chunk"],
-              note: "Hit behind the ball",
-            },
-            {
-              club: "Pitching Wedge",
-              qualities: [],
-              note: "Actually decent shot!",
-            },
-            { club: "Putter", qualities: [], note: "" },
-            { club: "Putter", qualities: [], note: "Finally!" },
-          ],
-        },
-        {
-          number: 2,
-          par: 3,
-          distance: 165,
-          shots: [
-            {
-              club: "6 Iron",
-              qualities: ["thin"],
-              note: "Scuffed it but it worked",
-            },
-            { club: "Putter", qualities: [], note: "" },
-            { club: "Putter", qualities: [], note: "" },
-          ],
-        },
-        {
-          number: 3,
-          par: 5,
-          distance: 520,
-          shots: [
-            { club: "Driver", qualities: ["hook"], note: "Pulled it left" },
-            {
-              club: "5 Wood",
-              qualities: ["fat"],
-              note: "Took a divot the size of a dinner plate",
-            },
-            { club: "8 Iron", qualities: [], note: "Solid contact for once" },
-            { club: "Pitching Wedge", qualities: [], note: "" },
-            { club: "Putter", qualities: [], note: "" },
-          ],
-        },
-        // Add a few more holes with shots
-        {
-          number: 4,
-          par: 4,
-          distance: 410,
-          shots: [
-            {
-              club: "Driver",
-              qualities: ["top"],
-              note: "Topped it, rolled about 150 yards",
-            },
-            { club: "5 Iron", qualities: [], note: "Decent recovery" },
-            {
-              club: "Sand Wedge",
-              qualities: ["skull"],
-              note: "Bladed it over the green",
-            },
-            { club: "Pitching Wedge", qualities: [], note: "" },
-            { club: "Putter", qualities: [], note: "" },
-            { club: "Putter", qualities: [], note: "Double bogey, yikes" },
-          ],
-        },
-        {
-          number: 5,
-          par: 3,
-          distance: 180,
-          shots: [
-            { club: "5 Iron", qualities: [], note: "Best shot of the day!" },
-            { club: "Putter", qualities: [], note: "Almost a birdie!" },
-          ],
-        },
-        // Add empty holes for holes 6-18
-        ...Array.from({ length: 13 }, (_, i) => ({
-          number: i + 6,
-          par: 4,
-          distance: 400,
-          shots: [],
-        })),
-      ],
-    },
-    {
-      id: generateId(),
-      date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
-      courseId: "sample_course_2",
-      courseName: "Bogey Creek Country Club",
-      tee: "Blue",
-      finishedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      holes: [
-        {
-          number: 1,
-          par: 4,
-          distance: 395,
-          shots: [
-            {
-              club: "Driver",
-              qualities: ["slice", "fat"],
-              note: "Classic opening hole disaster",
-            },
-            { club: "9 Iron", qualities: [], note: "Punched out from rough" },
-            { club: "Pitching Wedge", qualities: [], note: "" },
-            { club: "Putter", qualities: [], note: "" },
-            { club: "Putter", qualities: [], note: "Bogey to start" },
-          ],
-        },
-        {
-          number: 2,
-          par: 3,
-          distance: 175,
-          shots: [
-            { club: "6 Iron", qualities: ["pull"], note: "Left of the green" },
-            { club: "Sand Wedge", qualities: [], note: "Decent chip" },
-            { club: "Putter", qualities: [], note: "" },
-          ],
-        },
-        // Add empty holes for holes 3-18
-        ...Array.from({ length: 16 }, (_, i) => ({
-          number: i + 3,
-          par: 4,
-          distance: 400,
-          shots: [],
-        })),
-      ],
-    },
-    {
-      id: generateId(),
-      date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 2 weeks ago
-      courseId: "sample_course_3",
-      courseName: "Slice & Dice Golf Links",
-      tee: "White",
-      finishedAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
-      holes: [
-        {
-          number: 1,
-          par: 4,
-          distance: 375,
-          shots: [
-            { club: "Driver", qualities: [], note: "Rare good drive!" },
-            { club: "Pitching Wedge", qualities: [], note: "" },
-            {
-              club: "Putter",
-              qualities: [],
-              note: "Birdie! Probably my only one this year",
-            },
-          ],
-        },
-        // Add empty holes for holes 2-18
-        ...Array.from({ length: 17 }, (_, i) => ({
-          number: i + 2,
-          par: 4,
-          distance: 400,
-          shots: [],
-        })),
-      ],
-    },
-  ];
+// Now using createRealisticSampleRounds() imported from sampleRoundsGenerator.js
 
-  return sampleRounds;
-};
+// Export for use elsewhere
+export { NEWTON_COMMONWEALTH_COURSE };
 
 export const RoundProvider = ({ children }) => {
   const [state, dispatch] = useReducer(roundReducer, initialState);
@@ -372,7 +224,7 @@ export const RoundProvider = ({ children }) => {
         rounds = JSON.parse(savedRounds);
       } else if (hasConsented) {
         // Only load sample data if user has consented
-        rounds = createSampleData();
+        rounds = createRealisticSampleRounds();
         await saveRounds(rounds);
       }
 
@@ -432,11 +284,12 @@ export const RoundProvider = ({ children }) => {
     console.log("Started new round:", round);
   };
 
-  const addShot = (holeNumber, club, qualities = [], note = "") => {
+  const addShot = (holeNumber, club, qualities = [], note = "", quality = 5) => {
     const shot = {
       club,
       qualities,
       note: note.trim(),
+      quality, // 1-10 scale
     };
 
     dispatch({
@@ -497,7 +350,7 @@ export const RoundProvider = ({ children }) => {
 
       if (hasConsented && state.pastRounds.length === 0) {
         // Load sample data when user first consents
-        const sampleRounds = createSampleData();
+        const sampleRounds = createRealisticSampleRounds();
         dispatch({
           type: ROUND_ACTIONS.LOAD_ROUNDS,
           payload: { rounds: sampleRounds, hasConsented },

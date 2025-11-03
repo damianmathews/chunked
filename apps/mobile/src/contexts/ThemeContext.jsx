@@ -79,10 +79,14 @@ export const ThemeProvider = ({ children }) => {
         ? "rgba(235, 235, 245, 0.6)"
         : "rgba(60, 60, 67, 0.6)",
 
+      // Brand gradient colors (from logo)
+      brandTealDark: "#2B7A78", // Dark teal from logo
+      brandTealLight: "#5AB9B6", // Light teal from logo
+
       // Golf-specific accent colors (system tints)
-      primary: isDark ? "#30D158" : "#34C759", // iOS system green
-      primaryDark: "#30D158", // iOS system green dark
-      accent: isDark ? "#30D158" : "#34C759",
+      primary: isDark ? "#5AB9B6" : "#2B7A78", // Brand teal
+      primaryDark: "#2B7A78", // Dark teal
+      accent: isDark ? "#5AB9B6" : "#2B7A78",
 
       // Semantic colors
       danger: isDark ? "#FF453A" : "#FF3B30",

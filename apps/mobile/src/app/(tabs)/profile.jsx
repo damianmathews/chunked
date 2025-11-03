@@ -41,23 +41,36 @@ export default function ProfileScreen() {
       0,
     );
 
-    // Calculate total par
-    const totalPar = pastRounds.reduce((total, round) => {
-      return (
-        total + round.holes.reduce((holeTotal, hole) => holeTotal + hole.par, 0)
-      );
-    }, 0);
+    // Calculate average par per round
+    const avgParPerRound =
+      pastRounds.reduce((total, round) => {
+        return (
+          total +
+          round.holes.reduce((holeTotal, hole) => holeTotal + hole.par, 0)
+        );
+      }, 0) / totalRounds;
 
     const avgShotsPerRound = Math.round(totalShots / totalRounds);
-    const avgRelativeToPar = totalShots - totalPar;
+    const avgRelativeToPar = Math.round(avgShotsPerRound - avgParPerRound);
 
     // Count shot qualities (miss types only)
     const qualityCounts = {};
     const missTypes = ["slice", "hook", "chunk", "thin", "fat"];
 
+    // Calculate average shot quality (1-10 scale)
+    let totalQuality = 0;
+    let qualityCount = 0;
+
     pastRounds.forEach((round) => {
       round.holes.forEach((hole) => {
         hole.shots.forEach((shot) => {
+          // Count shot quality ratings
+          if (shot.quality !== undefined && shot.quality !== null) {
+            totalQuality += shot.quality;
+            qualityCount++;
+          }
+
+          // Count miss types
           shot.qualities.forEach((quality) => {
             if (missTypes.includes(quality)) {
               qualityCounts[quality] = (qualityCounts[quality] || 0) + 1;
@@ -66,6 +79,8 @@ export default function ProfileScreen() {
         });
       });
     });
+
+    const avgShotQuality = qualityCount > 0 ? (totalQuality / qualityCount).toFixed(1) : null;
 
     const mostCommonMiss =
       Object.entries(qualityCounts).length > 0
@@ -77,6 +92,7 @@ export default function ProfileScreen() {
       totalShots,
       avgShotsPerRound,
       avgRelativeToPar,
+      avgShotQuality,
       mostCommonMiss,
       missCount: mostCommonMiss ? qualityCounts[mostCommonMiss] : 0,
     };
@@ -356,6 +372,28 @@ export default function ProfileScreen() {
                   : theme.colors.scoreOkay
               }
             />
+
+            {stats.avgShotQuality && (
+              <StatCard
+                icon={Target}
+                title="Average Shot Quality"
+                value={`${stats.avgShotQuality}/10`}
+                subtitle={
+                  stats.avgShotQuality >= 7
+                    ? "Great ball striking"
+                    : stats.avgShotQuality >= 5
+                      ? "Solid contact"
+                      : "Room for improvement"
+                }
+                color={
+                  stats.avgShotQuality >= 7
+                    ? theme.colors.scoreGood
+                    : stats.avgShotQuality >= 5
+                      ? theme.colors.scoreOkay
+                      : theme.colors.scoreBad
+                }
+              />
+            )}
 
             <StatCard
               icon={TrendingUp}

@@ -6,9 +6,10 @@ import {
   TouchableOpacity,
   Modal,
   TextInput,
-  Alert,
   Animated,
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";
+import Slider from "@react-native-community/slider";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -22,6 +23,7 @@ import {
 } from "lucide-react-native";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useRound } from "@/contexts/RoundContext";
+import { ThemedModal } from "@/components/ThemedModal";
 import * as Haptics from "expo-haptics";
 
 export default function RoundLoggerScreen() {
@@ -42,7 +44,15 @@ export default function RoundLoggerScreen() {
   const [selectedClub, setSelectedClub] = useState("");
   const [selectedQualities, setSelectedQualities] = useState([]);
   const [shotNote, setShotNote] = useState("");
+  const [shotQuality, setShotQuality] = useState(5); // 1-10 scale, default 5
   const [showQualityTooltip, setShowQualityTooltip] = useState(null);
+  const [showShotLoggedModal, setShowShotLoggedModal] = useState(false);
+  const [shotLoggedMessage, setShotLoggedMessage] = useState("");
+  const [showFinishRoundModal, setShowFinishRoundModal] = useState(false);
+  const [showNoShotsWarning, setShowNoShotsWarning] = useState(false);
+  const [showLimitReachedModal, setShowLimitReachedModal] = useState(false);
+  const [showSelectClubModal, setShowSelectClubModal] = useState(false);
+  const [finishRoundMessage, setFinishRoundMessage] = useState("");
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
   // Track recent shot patterns for soulful messages
@@ -168,18 +178,19 @@ export default function RoundLoggerScreen() {
     setSelectedClub("");
     setSelectedQualities([]);
     setShotNote("");
+    setShotQuality(5);
     setShowShotModal(true);
   };
 
   const handleSaveShot = () => {
     if (!selectedClub) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert("Select Club", "Please select a club for this shot.");
+      setShowSelectClubModal(true);
       return;
     }
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    addShot(selectedHole.number, selectedClub, selectedQualities, shotNote);
+    addShot(selectedHole.number, selectedClub, selectedQualities, shotNote, shotQuality);
 
     // Get the updated hole - addShot has already added the shot, so shots.length is the correct count
     const updatedHole = currentRound.holes.find(
@@ -194,28 +205,9 @@ export default function RoundLoggerScreen() {
       selectedQualities,
     );
 
-    // Show alert with options to continue or finish
-    Alert.alert("Shot Logged", message, [
-      {
-        text: "Add Another Shot",
-        onPress: () => {
-          Haptics.selectionAsync();
-          // Reset form for another shot on same hole
-          setSelectedClub("");
-          setSelectedQualities([]);
-          setShotNote("");
-          // Keep modal open
-        },
-      },
-      {
-        text: "Done with Hole",
-        style: "default",
-        onPress: () => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          setShowShotModal(false);
-        },
-      },
-    ]);
+    // Show themed modal with options to continue or finish
+    setShotLoggedMessage(message);
+    setShowShotLoggedModal(true);
   };
 
   const handleFinishRound = () => {
@@ -225,38 +217,19 @@ export default function RoundLoggerScreen() {
 
     if (playedHoles.length === 0) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert(
-        "No Shots Logged",
-        "You haven't logged any shots yet. Are you sure you want to finish?",
-      );
+      setShowNoShotsWarning(true);
       return;
     }
 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(
-      "Finish Round",
-      `You've logged shots for ${playedHoles.length} hole(s). Finish and save this round?`,
-      [
-        { text: "Keep Playing", style: "cancel" },
-        {
-          text: "Finish Round",
-          onPress: async () => {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            await finishRound();
-            Alert.alert(
-              "Round Saved",
-              "Round data logged. View journal to analyze performance.",
-              [
-                {
-                  text: "View Journal",
-                  onPress: () => router.push("/(tabs)/journal"),
-                },
-              ],
-            );
-          },
-        },
-      ],
-    );
+    setFinishRoundMessage(`You've logged shots for ${playedHoles.length} hole(s). Finish and save this round?`);
+    setShowFinishRoundModal(true);
+  };
+
+  const confirmFinishRound = async () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    await finishRound();
+    router.push("/(tabs)/journal");
   };
 
   const toggleQuality = (quality) => {
@@ -267,7 +240,7 @@ export default function RoundLoggerScreen() {
       setSelectedQualities([...selectedQualities, quality]);
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      Alert.alert("Limit Reached", "You can select up to 3 shot qualities.");
+      setShowLimitReachedModal(true);
     }
   };
 
@@ -405,6 +378,16 @@ export default function RoundLoggerScreen() {
           <TouchableOpacity
             key={hole.number}
             onPress={() => handleOpenShotModal(hole)}
+            onLongPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              router.push({
+                pathname: "/hole-detail",
+                params: {
+                  holeNumber: hole.number,
+                  isCurrentRound: "true",
+                },
+              });
+            }}
             style={{
               backgroundColor: theme.colors.cardBackground,
               borderWidth: 1,
@@ -611,7 +594,7 @@ export default function RoundLoggerScreen() {
             }}
             showsVerticalScrollIndicator={false}
           >
-            {/* Club Selection with Glass Cards */}
+            {/* Club Selection Dropdown */}
             <View style={{ marginBottom: 32 }}>
               <Text
                 style={{
@@ -624,47 +607,36 @@ export default function RoundLoggerScreen() {
                 Select Club
               </Text>
 
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {CLUBS.map((club) => (
-                  <TouchableOpacity
-                    key={club}
-                    onPress={() => {
+              <View
+                style={{
+                  backgroundColor: theme.colors.glass,
+                  borderRadius: theme.glass.cornerRadius,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  overflow: "hidden",
+                }}
+              >
+                <Picker
+                  selectedValue={selectedClub}
+                  onValueChange={(value) => {
+                    if (value) {
                       Haptics.selectionAsync();
-                      setSelectedClub(club);
-                    }}
-                    style={{
-                      backgroundColor:
-                        selectedClub === club
-                          ? theme.colors.primary
-                          : theme.colors.glass,
-                      paddingHorizontal: 16,
-                      paddingVertical: 12,
-                      borderRadius: theme.glass.cornerRadius,
-                      borderWidth: 1,
-                      borderColor:
-                        selectedClub === club
-                          ? theme.colors.primary
-                          : theme.colors.border,
-                      shadowColor: theme.colors.shadow,
-                      shadowOffset: { width: 0, height: 1 },
-                      shadowOpacity: selectedClub === club ? 1 : 0.5,
-                      shadowRadius: 2,
-                      elevation: selectedClub === club ? 3 : 1,
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        fontWeight: theme.typography.weights.label,
-                        color:
-                          selectedClub === club ? "#FFFFFF" : theme.colors.text,
-                      }}
-                    >
-                      {club}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                      setSelectedClub(value);
+                    }
+                  }}
+                  style={{
+                    color: theme.colors.text,
+                    backgroundColor: "transparent",
+                  }}
+                  itemStyle={{
+                    color: theme.colors.text,
+                  }}
+                >
+                  <Picker.Item label="Choose a club..." value="" />
+                  {CLUBS.map((club) => (
+                    <Picker.Item key={club} label={club} value={club} />
+                  ))}
+                </Picker>
               </View>
             </View>
 
@@ -759,6 +731,68 @@ export default function RoundLoggerScreen() {
                     </TouchableOpacity>
                   </TouchableOpacity>
                 ))}
+              </View>
+            </View>
+
+            {/* Shot Quality Slider */}
+            <View style={{ marginBottom: 32 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: theme.typography.weights.title,
+                    color: theme.colors.text,
+                  }}
+                >
+                  Shot Quality
+                </Text>
+                <View style={{
+                  backgroundColor: theme.colors.primary,
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 12,
+                }}>
+                  <Text style={{
+                    fontSize: 20,
+                    fontWeight: '700',
+                    color: '#FFFFFF',
+                  }}>
+                    {shotQuality}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={{
+                backgroundColor: theme.colors.glass,
+                borderRadius: theme.glass.cornerRadius,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+                padding: 16,
+              }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text style={{ fontSize: 12, color: theme.colors.textSecondary }}>
+                    1 (Terrible)
+                  </Text>
+                  <Text style={{ fontSize: 12, color: theme.colors.textSecondary }}>
+                    10 (Pure)
+                  </Text>
+                </View>
+                <Slider
+                  value={shotQuality}
+                  onValueChange={(value) => {
+                    const rounded = Math.round(value);
+                    if (rounded !== shotQuality) {
+                      Haptics.selectionAsync();
+                      setShotQuality(rounded);
+                    }
+                  }}
+                  minimumValue={1}
+                  maximumValue={10}
+                  step={1}
+                  minimumTrackTintColor={theme.colors.primary}
+                  maximumTrackTintColor={theme.colors.border}
+                  thumbTintColor={theme.colors.primary}
+                />
               </View>
             </View>
 
@@ -890,6 +924,96 @@ export default function RoundLoggerScreen() {
           </Animated.View>
         </TouchableOpacity>
       </Modal>
+
+      {/* Themed Modals */}
+      <ThemedModal
+        visible={showSelectClubModal}
+        title="Select Club"
+        message="Please select a club for this shot."
+        buttons={[
+          {
+            text: "OK",
+            onPress: () => setShowSelectClubModal(false),
+          },
+        ]}
+        onDismiss={() => setShowSelectClubModal(false)}
+      />
+
+      <ThemedModal
+        visible={showShotLoggedModal}
+        title="Shot Logged"
+        message={shotLoggedMessage}
+        buttons={[
+          {
+            text: "Add Another Shot",
+            style: "cancel",
+            onPress: () => {
+              Haptics.selectionAsync();
+              setSelectedClub("");
+              setSelectedQualities([]);
+              setShotNote("");
+              setShotQuality(5);
+              setShowShotLoggedModal(false);
+            },
+          },
+          {
+            text: "Done with Hole",
+            onPress: () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowShotModal(false);
+              setShowShotLoggedModal(false);
+            },
+          },
+        ]}
+        onDismiss={() => setShowShotLoggedModal(false)}
+      />
+
+      <ThemedModal
+        visible={showFinishRoundModal}
+        title="Finish Round"
+        message={finishRoundMessage}
+        buttons={[
+          {
+            text: "Keep Playing",
+            style: "cancel",
+            onPress: () => setShowFinishRoundModal(false),
+          },
+          {
+            text: "Finish Round",
+            onPress: () => {
+              setShowFinishRoundModal(false);
+              confirmFinishRound();
+            },
+          },
+        ]}
+        onDismiss={() => setShowFinishRoundModal(false)}
+      />
+
+      <ThemedModal
+        visible={showNoShotsWarning}
+        title="No Shots Logged"
+        message="You haven't logged any shots yet. Are you sure you want to finish?"
+        buttons={[
+          {
+            text: "OK",
+            onPress: () => setShowNoShotsWarning(false),
+          },
+        ]}
+        onDismiss={() => setShowNoShotsWarning(false)}
+      />
+
+      <ThemedModal
+        visible={showLimitReachedModal}
+        title="Limit Reached"
+        message="You can select up to 3 shot qualities."
+        buttons={[
+          {
+            text: "OK",
+            onPress: () => setShowLimitReachedModal(false),
+          },
+        ]}
+        onDismiss={() => setShowLimitReachedModal(false)}
+      />
     </View>
   );
 }
