@@ -84,7 +84,7 @@ export default function OnboardingScreen() {
         {/* Logo Section */}
         <View style={styles.logoSection}>
           <Image
-            source={require("../../../../assets/images/icon.png")}
+            source={require("../../../assets/images/icon.png")}
             style={styles.logo}
             resizeMode="contain"
           />
