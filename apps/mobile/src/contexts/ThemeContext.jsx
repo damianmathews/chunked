@@ -79,14 +79,16 @@ export const ThemeProvider = ({ children }) => {
         ? "rgba(235, 235, 245, 0.6)"
         : "rgba(60, 60, 67, 0.6)",
 
-      // Brand gradient colors (from logo)
-      brandTealDark: "#2B7A78", // Dark teal from logo
-      brandTealLight: "#5AB9B6", // Light teal from logo
+      // Brand gradient colors (from logo - exact match)
+      brandGradientStart: "#247B7F", // Darker teal from logo
+      brandGradientEnd: "#5BC0BE", // Lighter cyan from logo
+      brandTealDark: "#247B7F",
+      brandTealLight: "#5BC0BE",
 
       // Golf-specific accent colors (system tints)
-      primary: isDark ? "#5AB9B6" : "#2B7A78", // Brand teal
-      primaryDark: "#2B7A78", // Dark teal
-      accent: isDark ? "#5AB9B6" : "#2B7A78",
+      primary: isDark ? "#5BC0BE" : "#247B7F", // Brand teal
+      primaryDark: "#247B7F", // Dark teal
+      accent: isDark ? "#5BC0BE" : "#247B7F",
 
       // Semantic colors
       danger: isDark ? "#FF453A" : "#FF3B30",

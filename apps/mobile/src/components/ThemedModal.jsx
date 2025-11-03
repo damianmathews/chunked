@@ -140,7 +140,7 @@ export function ThemedModal({
                 >
                   {isDefaultButton ? (
                     <LinearGradient
-                      colors={[theme.colors.brandTealDark, theme.colors.brandTealLight]}
+                      colors={[theme.colors.brandGradientStart, theme.colors.brandGradientEnd]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                       style={styles.gradientButton}

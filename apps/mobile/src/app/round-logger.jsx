@@ -540,7 +540,7 @@ export default function RoundLoggerScreen() {
                 </Text>
               </TouchableOpacity>
 
-              <View style={{ alignItems: "center" }}>
+              <View style={{ alignItems: "center", flex: 1 }}>
                 <Text
                   style={{
                     fontSize: 18,
@@ -548,7 +548,7 @@ export default function RoundLoggerScreen() {
                     color: theme.colors.text,
                   }}
                 >
-                  Log Shot - Hole {selectedHole?.number}
+                  Hole {selectedHole?.number}
                 </Text>
                 <Text
                   style={{
@@ -585,6 +585,61 @@ export default function RoundLoggerScreen() {
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Shot Progress Indicator */}
+          {selectedHole && (
+            <LinearGradient
+              colors={[theme.colors.brandGradientStart, theme.colors.brandGradientEnd]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={{
+                paddingVertical: 16,
+                paddingHorizontal: 24,
+              }}
+            >
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <View>
+                  <Text style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.8)", marginBottom: 4 }}>
+                    LOGGING SHOT
+                  </Text>
+                  <Text style={{ fontSize: 32, fontWeight: "700", color: "#FFFFFF" }}>
+                    #{selectedHole.shots.length + 1}
+                  </Text>
+                </View>
+                <View style={{ alignItems: "flex-end" }}>
+                  <Text style={{ fontSize: 12, color: "rgba(255, 255, 255, 0.8)", marginBottom: 4 }}>
+                    TOTAL SHOTS
+                  </Text>
+                  <Text style={{ fontSize: 24, fontWeight: "600", color: "#FFFFFF" }}>
+                    {selectedHole.shots.length} so far
+                  </Text>
+                </View>
+              </View>
+
+              {/* Shot History Pills */}
+              {selectedHole.shots.length > 0 && (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                  {selectedHole.shots.map((shot, index) => (
+                    <View
+                      key={index}
+                      style={{
+                        backgroundColor: "rgba(255, 255, 255, 0.25)",
+                        paddingHorizontal: 12,
+                        paddingVertical: 6,
+                        borderRadius: 12,
+                        borderWidth: 1,
+                        borderColor: "rgba(255, 255, 255, 0.3)",
+                      }}
+                    >
+                      <Text style={{ fontSize: 12, color: "#FFFFFF", fontWeight: "600" }}>
+                        Shot {index + 1}: {shot.club}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </LinearGradient>
+          )}
 
           <ScrollView
             style={{ flex: 1 }}
@@ -941,12 +996,20 @@ export default function RoundLoggerScreen() {
 
       <ThemedModal
         visible={showShotLoggedModal}
-        title="Shot Logged"
+        title="Shot Logged! ✓"
         message={shotLoggedMessage}
         buttons={[
           {
-            text: "Add Another Shot",
+            text: "Done with Hole",
             style: "cancel",
+            onPress: () => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowShotModal(false);
+              setShowShotLoggedModal(false);
+            },
+          },
+          {
+            text: "Log Another Shot",
             onPress: () => {
               Haptics.selectionAsync();
               setSelectedClub("");
@@ -954,14 +1017,7 @@ export default function RoundLoggerScreen() {
               setShotNote("");
               setShotQuality(5);
               setShowShotLoggedModal(false);
-            },
-          },
-          {
-            text: "Done with Hole",
-            onPress: () => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              setShowShotModal(false);
-              setShowShotLoggedModal(false);
+              // Keep the modal open to log another shot
             },
           },
         ]}
