@@ -25,6 +25,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useRound } from "@/contexts/RoundContext";
 import { ThemedModal } from "@/components/ThemedModal";
 import * as Haptics from "expo-haptics";
+import { LinearGradient } from "expo-linear-gradient";
 
 export default function RoundLoggerScreen() {
   const insets = useSafeAreaInsets();

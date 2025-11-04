@@ -148,7 +148,10 @@ export default function NewRoundScreen() {
   };
 
   const handleDateSelect = (day) => {
-    setRoundDate(new Date(day.dateString));
+    // Parse date string to avoid timezone offset issues
+    const [year, month, dayNum] = day.dateString.split('-').map(Number);
+    const localDate = new Date(year, month - 1, dayNum, 12, 0, 0); // Noon local time
+    setRoundDate(localDate);
     setShowDatePicker(false);
   };
 

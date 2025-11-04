@@ -158,50 +158,51 @@ export const getCourseDetails = async (courseId) => {
 export const getTestCourse = () => {
   return {
     id: "test_course_1",
-    name: "Chunked Hills Golf Club",
-    location: "Test Valley, CA",
-    city: "Test Valley",
-    state: "CA",
+    name: "Newton Commonwealth Golf Club",
+    location: "Newton, MA",
+    city: "Newton",
+    state: "MA",
     country: "USA",
-    yardages: { White: 6200, Blue: 6500, Black: 6800 },
+    yardages: { Blue: 5354 },
   };
 };
 
 // Get detailed test course information
 export const getTestCourseDetails = () => {
+  // Newton Commonwealth Golf Club - Par 70, 5354 yards (Blue tees)
   const testHoles = [
     // Front 9
-    { hole: 1, par: 4, yardage: 380 },
-    { hole: 2, par: 3, yardage: 165 },
-    { hole: 3, par: 5, yardage: 520 },
-    { hole: 4, par: 4, yardage: 410 },
-    { hole: 5, par: 3, yardage: 180 },
-    { hole: 6, par: 4, yardage: 390 },
-    { hole: 7, par: 5, yardage: 505 },
-    { hole: 8, par: 4, yardage: 425 },
-    { hole: 9, par: 4, yardage: 365 },
+    { hole: 1, par: 4, yardage: 277 },
+    { hole: 2, par: 5, yardage: 533 },
+    { hole: 3, par: 3, yardage: 193 },
+    { hole: 4, par: 3, yardage: 129 },
+    { hole: 5, par: 5, yardage: 455 },
+    { hole: 6, par: 4, yardage: 276 },
+    { hole: 7, par: 3, yardage: 177 },
+    { hole: 8, par: 5, yardage: 488 },
+    { hole: 9, par: 3, yardage: 210 },
     // Back 9
-    { hole: 10, par: 4, yardage: 395 },
-    { hole: 11, par: 3, yardage: 175 },
-    { hole: 12, par: 5, yardage: 535 },
-    { hole: 13, par: 4, yardage: 400 },
-    { hole: 14, par: 3, yardage: 155 },
-    { hole: 15, par: 4, yardage: 420 },
-    { hole: 16, par: 5, yardage: 510 },
-    { hole: 17, par: 4, yardage: 385 },
-    { hole: 18, par: 4, yardage: 440 },
+    { hole: 10, par: 4, yardage: 276 },
+    { hole: 11, par: 4, yardage: 307 },
+    { hole: 12, par: 3, yardage: 159 },
+    { hole: 13, par: 4, yardage: 268 },
+    { hole: 14, par: 4, yardage: 247 },
+    { hole: 15, par: 5, yardage: 451 },
+    { hole: 16, par: 3, yardage: 152 },
+    { hole: 17, par: 4, yardage: 378 },
+    { hole: 18, par: 4, yardage: 378 },
   ];
 
   return {
     id: "test_course_1",
-    name: "Chunked Hills Golf Club",
-    location: "Test Valley, CA",
-    city: "Test Valley",
-    state: "CA",
+    name: "Newton Commonwealth Golf Club",
+    location: "Newton, MA",
+    city: "Newton",
+    state: "MA",
     country: "USA",
     holes: testHoles,
-    tees: ["White", "Blue", "Black"],
-    selectedTee: "White",
+    tees: ["Blue"],
+    selectedTee: "Blue",
   };
 };
 
