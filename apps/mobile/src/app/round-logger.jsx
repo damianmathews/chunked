@@ -529,7 +529,6 @@ export default function RoundLoggerScreen() {
               style={{
                 flexDirection: "row",
                 alignItems: "center",
-                justifyContent: "space-between",
               }}
             >
               <TouchableOpacity
@@ -538,22 +537,24 @@ export default function RoundLoggerScreen() {
                   setShowShotModal(false);
                 }}
                 style={{
-                  paddingVertical: 8,
-                  paddingLeft: 0,
-                  paddingRight: 16,
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: theme.colors.glass,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginRight: 16,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
                 }}
               >
-                <Text
-                  style={{ fontSize: 16, color: theme.colors.textSecondary }}
-                >
-                  Cancel
-                </Text>
+                <ArrowLeft size={20} color={theme.colors.text} />
               </TouchableOpacity>
 
-              <View style={{ alignItems: "center", flex: 1 }}>
+              <View style={{ flex: 1 }}>
                 <Text
                   style={{
-                    fontSize: 18,
+                    fontSize: 20,
                     fontWeight: theme.typography.weights.title,
                     color: theme.colors.text,
                   }}
@@ -569,30 +570,6 @@ export default function RoundLoggerScreen() {
                   Par {selectedHole?.par} • {selectedHole?.distance} yards
                 </Text>
               </View>
-
-              <TouchableOpacity
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  handleSaveShot();
-                }}
-                style={{
-                  paddingVertical: 8,
-                  paddingRight: 0,
-                  paddingLeft: 16,
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: selectedClub
-                      ? theme.colors.primary
-                      : theme.colors.textSecondary,
-                    fontWeight: theme.typography.weights.title,
-                  }}
-                >
-                  Save
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
 
@@ -901,6 +878,52 @@ export default function RoundLoggerScreen() {
               />
             </View>
           </ScrollView>
+
+          {/* Log Shot Button */}
+          <View
+            style={{
+              paddingHorizontal: 24,
+              paddingTop: 16,
+              paddingBottom: insets.bottom + 16,
+              backgroundColor: theme.colors.background,
+              borderTopWidth: 1,
+              borderTopColor: theme.colors.border,
+            }}
+          >
+            <TouchableOpacity
+              onPress={handleSaveShot}
+              activeOpacity={0.9}
+              disabled={!selectedClub}
+              style={{
+                borderRadius: 16,
+                overflow: "hidden",
+                opacity: selectedClub ? 1 : 0.5,
+              }}
+            >
+              <LinearGradient
+                colors={[
+                  theme.colors.brandGradientStart,
+                  theme.colors.brandGradientEnd,
+                ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  paddingVertical: 18,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: theme.typography.weights.title,
+                    color: "#FFFFFF",
+                  }}
+                >
+                  Log Shot
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
