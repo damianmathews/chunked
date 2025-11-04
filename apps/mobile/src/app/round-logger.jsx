@@ -42,6 +42,7 @@ export default function RoundLoggerScreen() {
 
   const [selectedHole, setSelectedHole] = useState(null);
   const [showShotModal, setShowShotModal] = useState(false);
+  const [showShotHistory, setShowShotHistory] = useState(false);
   const [selectedClub, setSelectedClub] = useState("");
   const [selectedQualities, setSelectedQualities] = useState([]);
   const [shotNote, setShotNote] = useState("");
@@ -176,11 +177,18 @@ export default function RoundLoggerScreen() {
   const handleOpenShotModal = (hole) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setSelectedHole(hole);
-    setSelectedClub("");
-    setSelectedQualities([]);
-    setShotNote("");
-    setShotQuality(5);
-    setShowShotModal(true);
+
+    // If hole has shots, show history first
+    if (hole.shots && hole.shots.length > 0) {
+      setShowShotHistory(true);
+    } else {
+      // No shots yet, go straight to logging
+      setSelectedClub("");
+      setSelectedQualities([]);
+      setShotNote("");
+      setShotQuality(5);
+      setShowShotModal(true);
+    }
   };
 
   const handleSaveShot = () => {
@@ -920,6 +928,215 @@ export default function RoundLoggerScreen() {
                   }}
                 >
                   Log Shot
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Shot History Modal */}
+      <Modal
+        visible={showShotHistory}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowShotHistory(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+          <StatusBar style={theme.colors.statusBarStyle} />
+
+          {/* Header */}
+          <View
+            style={{
+              paddingTop: insets.top + 20,
+              paddingHorizontal: 24,
+              paddingBottom: 20,
+              backgroundColor: theme.colors.glassThick,
+              borderBottomWidth: 1,
+              borderBottomColor: theme.colors.border,
+            }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowShotHistory(false);
+                }}
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: theme.colors.glass,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  marginRight: 16,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                }}
+              >
+                <ArrowLeft size={20} color={theme.colors.text} />
+              </TouchableOpacity>
+
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: theme.typography.weights.title,
+                    color: theme.colors.text,
+                  }}
+                >
+                  Hole {selectedHole?.number} History
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: theme.colors.textSecondary,
+                  }}
+                >
+                  {selectedHole?.shots?.length} shots • Par {selectedHole?.par}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Shot List */}
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{
+              paddingHorizontal: 24,
+              paddingVertical: 20,
+              paddingBottom: insets.bottom + 100,
+            }}
+          >
+            {selectedHole?.shots?.map((shot, index) => (
+              <View
+                key={index}
+                style={{
+                  backgroundColor: theme.colors.glassThick,
+                  borderRadius: 16,
+                  borderWidth: 1,
+                  borderColor: theme.colors.border,
+                  padding: 20,
+                  marginBottom: 16,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+                  <View
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 24,
+                      backgroundColor: theme.colors.primary,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      marginRight: 16,
+                    }}
+                  >
+                    <Text style={{ fontSize: 20, fontWeight: "700", color: "#FFFFFF" }}>
+                      {index + 1}
+                    </Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: theme.typography.weights.title,
+                        color: theme.colors.text,
+                        marginBottom: 4,
+                      }}
+                    >
+                      {shot.club}
+                    </Text>
+                    <Text style={{ fontSize: 14, color: theme.colors.textSecondary }}>
+                      Quality: {shot.quality}/10
+                    </Text>
+                  </View>
+                </View>
+
+                {shot.qualities && shot.qualities.length > 0 && (
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
+                    {shot.qualities.map((quality, qIndex) => (
+                      <View
+                        key={qIndex}
+                        style={{
+                          backgroundColor: theme.colors.glass,
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                          borderRadius: 12,
+                          borderWidth: 1,
+                          borderColor: theme.colors.border,
+                        }}
+                      >
+                        <Text style={{ fontSize: 12, color: theme.colors.text }}>
+                          {quality}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
+                {shot.note && (
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: theme.colors.textSecondary,
+                      fontStyle: "italic",
+                    }}
+                  >
+                    "{shot.note}"
+                  </Text>
+                )}
+              </View>
+            ))}
+          </ScrollView>
+
+          {/* Add Another Shot Button */}
+          <View
+            style={{
+              paddingHorizontal: 24,
+              paddingTop: 16,
+              paddingBottom: insets.bottom + 16,
+              backgroundColor: theme.colors.background,
+              borderTopWidth: 1,
+              borderTopColor: theme.colors.border,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowShotHistory(false);
+                setSelectedClub("");
+                setSelectedQualities([]);
+                setShotNote("");
+                setShotQuality(5);
+                setShowShotModal(true);
+              }}
+              activeOpacity={0.9}
+              style={{
+                borderRadius: 16,
+                overflow: "hidden",
+              }}
+            >
+              <LinearGradient
+                colors={[
+                  theme.colors.brandGradientStart,
+                  theme.colors.brandGradientEnd,
+                ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{
+                  paddingVertical: 18,
+                  alignItems: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: theme.typography.weights.title,
+                    color: "#FFFFFF",
+                  }}
+                >
+                  Log Another Shot
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
