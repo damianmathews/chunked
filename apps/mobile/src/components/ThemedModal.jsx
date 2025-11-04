@@ -27,6 +27,11 @@ export function ThemedModal({
 }) {
   const theme = useTheme();
 
+  // Don't render anything if not visible - prevents invisible overlay blocking touches
+  if (!visible) {
+    return null;
+  }
+
   const handleButtonPress = (button) => {
     if (button.haptic !== false) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
