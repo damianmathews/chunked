@@ -247,9 +247,18 @@ export const RoundProvider = ({ children }) => {
         payload: { rounds, hasConsented },
       });
 
+      // MIGRATION: Check if current round has buggy data (all holes 400 yards)
       if (savedCurrentRound && hasConsented) {
         const currentRound = JSON.parse(savedCurrentRound);
-        dispatch({ type: ROUND_ACTIONS.START_ROUND, payload: currentRound });
+        const hasBuggyData = currentRound.holes?.every(h => h.distance === 400 && h.par === 4);
+
+        if (hasBuggyData) {
+          console.log("🔧 MIGRATION: Clearing buggy current round - all holes were 400 yard Par 4s");
+          await AsyncStorage.removeItem("current_golf_round");
+          // Don't dispatch the buggy round
+        } else {
+          dispatch({ type: ROUND_ACTIONS.START_ROUND, payload: currentRound });
+        }
       }
     } catch (error) {
       console.error("Error loading rounds:", error);
