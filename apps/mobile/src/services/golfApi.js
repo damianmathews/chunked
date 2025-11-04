@@ -163,34 +163,35 @@ export const getTestCourse = () => {
     city: "Newton",
     state: "MA",
     country: "USA",
-    yardages: { Blue: 5354 },
+    yardages: { White: 4992, Blue: 5354 },
   };
 };
 
 // Get detailed test course information
 export const getTestCourseDetails = () => {
-  // Newton Commonwealth Golf Club - Par 70, 5354 yards (Blue tees)
+  // Newton Commonwealth Golf Club - Par 70
+  // White: 4,992 yards | Blue: 5,354 yards
   const testHoles = [
     // Front 9
-    { hole: 1, par: 4, yardage: 277 },
-    { hole: 2, par: 5, yardage: 533 },
-    { hole: 3, par: 3, yardage: 193 },
-    { hole: 4, par: 3, yardage: 129 },
-    { hole: 5, par: 5, yardage: 455 },
-    { hole: 6, par: 4, yardage: 276 },
-    { hole: 7, par: 3, yardage: 177 },
-    { hole: 8, par: 5, yardage: 488 },
-    { hole: 9, par: 3, yardage: 210 },
+    { hole: 1, par: 4, teeBoxes: { White: 252, Blue: 277 } },
+    { hole: 2, par: 5, teeBoxes: { White: 476, Blue: 533 } },
+    { hole: 3, par: 3, teeBoxes: { White: 179, Blue: 193 } },
+    { hole: 4, par: 3, teeBoxes: { White: 110, Blue: 129 } },
+    { hole: 5, par: 5, teeBoxes: { White: 435, Blue: 455 } },
+    { hole: 6, par: 4, teeBoxes: { White: 255, Blue: 276 } },
+    { hole: 7, par: 3, teeBoxes: { White: 162, Blue: 177 } },
+    { hole: 8, par: 5, teeBoxes: { White: 473, Blue: 488 } },
+    { hole: 9, par: 3, teeBoxes: { White: 180, Blue: 210 } },
     // Back 9
-    { hole: 10, par: 4, yardage: 276 },
-    { hole: 11, par: 4, yardage: 307 },
-    { hole: 12, par: 3, yardage: 159 },
-    { hole: 13, par: 4, yardage: 268 },
-    { hole: 14, par: 4, yardage: 247 },
-    { hole: 15, par: 5, yardage: 451 },
-    { hole: 16, par: 3, yardage: 152 },
-    { hole: 17, par: 4, yardage: 378 },
-    { hole: 18, par: 4, yardage: 378 },
+    { hole: 10, par: 4, teeBoxes: { White: 259, Blue: 276 } },
+    { hole: 11, par: 4, teeBoxes: { White: 295, Blue: 307 } },
+    { hole: 12, par: 3, teeBoxes: { White: 148, Blue: 159 } },
+    { hole: 13, par: 4, teeBoxes: { White: 263, Blue: 268 } },
+    { hole: 14, par: 4, teeBoxes: { White: 231, Blue: 247 } },
+    { hole: 15, par: 5, teeBoxes: { White: 422, Blue: 451 } },
+    { hole: 16, par: 3, teeBoxes: { White: 130, Blue: 152 } },
+    { hole: 17, par: 4, teeBoxes: { White: 367, Blue: 378 } },
+    { hole: 18, par: 4, teeBoxes: { White: 355, Blue: 378 } },
   ];
 
   return {
@@ -201,7 +202,7 @@ export const getTestCourseDetails = () => {
     state: "MA",
     country: "USA",
     holes: testHoles,
-    tees: ["Blue"],
+    tees: ["White", "Blue"],
     selectedTee: "Blue",
   };
 };

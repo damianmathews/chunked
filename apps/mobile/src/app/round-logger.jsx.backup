@@ -199,21 +199,12 @@ export default function RoundLoggerScreen() {
     );
     const newShotCount = updatedHole.shots.length; // This is the correct count after addShot()
 
-    // UPDATE THE SELECTED HOLE STATE SO UI REFLECTS NEW SHOT COUNT
-    setSelectedHole(updatedHole);
-
     // Generate soulful message
     const message = generateSoulfulMessage(
       updatedHole,
       newShotCount,
       selectedQualities,
     );
-
-    // Reset form for next shot
-    setSelectedClub("");
-    setSelectedQualities([]);
-    setShotNote("");
-    setShotQuality(5);
 
     // Show themed modal with options to continue or finish
     setShotLoggedMessage(message);
@@ -1022,8 +1013,12 @@ export default function RoundLoggerScreen() {
             text: "Log Another Shot",
             onPress: () => {
               Haptics.selectionAsync();
+              setSelectedClub("");
+              setSelectedQualities([]);
+              setShotNote("");
+              setShotQuality(5);
               setShowShotLoggedModal(false);
-              // Form already reset in handleSaveShot, modal stays open
+              // Keep the modal open to log another shot
             },
           },
         ]}
