@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createRealisticSampleRounds } from "@/utils/sampleRoundsGenerator";
+import { getYardageForTee } from "@/services/golfApi";
 
 const RoundContext = createContext();
 
@@ -165,14 +166,27 @@ const NEWTON_COMMONWEALTH_COURSE = {
   ],
 };
 
-const createDefaultHoles = (courseHoles = []) => {
+const createDefaultHoles = (courseHoles = [], selectedTee = "White") => {
   const holes = [];
   for (let i = 1; i <= 18; i++) {
     const courseHole = courseHoles.find((h) => h.hole === i);
+
+    // Use getYardageForTee to properly extract yardage from teeBoxes structure
+    let distance = 400; // fallback default
+    if (courseHole) {
+      if (courseHole.teeBoxes) {
+        // Course uses teeBoxes structure
+        distance = getYardageForTee(courseHole, selectedTee);
+      } else if (courseHole.yardage) {
+        // Course uses flat yardage structure
+        distance = courseHole.yardage;
+      }
+    }
+
     holes.push({
       number: i,
       par: courseHole?.par || 4,
-      distance: courseHole?.yardage || 400,
+      distance: distance,
       shots: [],
     });
   }
@@ -277,7 +291,7 @@ export const RoundProvider = ({ children }) => {
       courseId: courseData.id,
       courseName: courseData.name,
       tee: tee,
-      holes: createDefaultHoles(courseData.holes || []),
+      holes: createDefaultHoles(courseData.holes || [], tee), // Pass tee to createDefaultHoles
     };
 
     dispatch({ type: ROUND_ACTIONS.START_ROUND, payload: round });
