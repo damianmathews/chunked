@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -56,6 +56,18 @@ export default function RoundLoggerScreen() {
   const [showSelectClubModal, setShowSelectClubModal] = useState(false);
   const [finishRoundMessage, setFinishRoundMessage] = useState("");
   const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Ensure all modals are closed on mount to prevent stuck states
+  useEffect(() => {
+    setShowShotModal(false);
+    setShowShotHistory(false);
+    setShowQualityTooltip(null);
+    setShowSelectClubModal(false);
+    setShowShotLoggedModal(false);
+    setShowFinishRoundModal(false);
+    setShowNoShotsWarning(false);
+    setShowLimitReachedModal(false);
+  }, []);
 
   // Track recent shot patterns for soulful messages
   const getRecentShots = () => {
@@ -316,6 +328,7 @@ export default function RoundLoggerScreen() {
         >
           <TouchableOpacity
             onPress={() => {
+              console.log("BACK BUTTON PRESSED");
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               router.back();
             }}
@@ -356,7 +369,10 @@ export default function RoundLoggerScreen() {
           </View>
 
           <TouchableOpacity
-            onPress={handleFinishRound}
+            onPress={() => {
+              console.log("FINISH BUTTON PRESSED");
+              handleFinishRound();
+            }}
             style={{
               backgroundColor: theme.colors.primary,
               paddingHorizontal: 20,
@@ -395,8 +411,12 @@ export default function RoundLoggerScreen() {
         {currentRound.holes.map((hole, index) => (
           <TouchableOpacity
             key={hole.number}
-            onPress={() => handleOpenShotModal(hole)}
+            onPress={() => {
+              console.log(`HOLE ${hole.number} CARD PRESSED, has ${hole.shots.length} shots`);
+              handleOpenShotModal(hole);
+            }}
             onLongPress={() => {
+              console.log(`HOLE ${hole.number} LONG PRESSED`);
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               router.push({
                 pathname: "/hole-detail",
