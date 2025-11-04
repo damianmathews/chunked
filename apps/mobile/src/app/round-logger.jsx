@@ -210,34 +210,29 @@ export default function RoundLoggerScreen() {
       return;
     }
 
+    console.log(`SAVING SHOT: ${selectedClub} on hole ${selectedHole.number}`);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    // Add the shot to context
     addShot(selectedHole.number, selectedClub, selectedQualities, shotNote, shotQuality);
 
-    // Get the updated hole - addShot has already added the shot, so shots.length is the correct count
+    // Get the updated hole with the new shot included
     const updatedHole = currentRound.holes.find(
       (h) => h.number === selectedHole.number,
     );
-    const newShotCount = updatedHole.shots.length; // This is the correct count after addShot()
+
+    console.log(`Shot saved! Hole ${selectedHole.number} now has ${updatedHole.shots.length} shots`);
 
     // UPDATE THE SELECTED HOLE STATE SO UI REFLECTS NEW SHOT COUNT
     setSelectedHole(updatedHole);
 
-    // Generate soulful message
-    const message = generateSoulfulMessage(
-      updatedHole,
-      newShotCount,
-      selectedQualities,
-    );
-
-    // Reset form for next shot
+    // Reset form for next shot - DON'T close modal, just clear form
     setSelectedClub("");
     setSelectedQualities([]);
     setShotNote("");
     setShotQuality(5);
 
-    // Show themed modal with options to continue or finish
-    setShotLoggedMessage(message);
-    setShowShotLoggedModal(true);
+    // NO MODAL - just stay in the shot logging screen with form reset
   };
 
   const handleFinishRound = () => {
@@ -297,6 +292,24 @@ export default function RoundLoggerScreen() {
         useNativeDriver: true,
       }),
     ]).start();
+  };
+
+  // Calculate current score relative to par
+  const getCurrentScore = () => {
+    if (!currentRound) return { totalShots: 0, totalPar: 0, scoreVsPar: 0 };
+
+    let totalShots = 0;
+    let totalPar = 0;
+
+    currentRound.holes.forEach((hole) => {
+      if (hole.shots.length > 0) {
+        totalShots += hole.shots.length;
+        totalPar += hole.par;
+      }
+    });
+
+    const scoreVsPar = totalShots - totalPar;
+    return { totalShots, totalPar, scoreVsPar };
   };
 
   return (
@@ -525,6 +538,56 @@ export default function RoundLoggerScreen() {
             </View>
           </TouchableOpacity>
         ))}
+
+        {/* Current Score Display */}
+        {(() => {
+          const { totalShots, totalPar, scoreVsPar } = getCurrentScore();
+          if (totalShots === 0) return null;
+
+          return (
+            <View
+              style={{
+                marginTop: 24,
+                padding: 20,
+                backgroundColor: theme.colors.glassThick,
+                borderRadius: 16,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: theme.colors.textSecondary,
+                  marginBottom: 8,
+                  textAlign: "center",
+                }}
+              >
+                Current Score
+              </Text>
+              <Text
+                style={{
+                  fontSize: 36,
+                  fontWeight: "700",
+                  color: scoreVsPar === 0 ? theme.colors.scoreGood : scoreVsPar > 0 ? theme.colors.scoreBad : theme.colors.scoreGood,
+                  textAlign: "center",
+                }}
+              >
+                {scoreVsPar === 0 ? "E" : scoreVsPar > 0 ? `+${scoreVsPar}` : scoreVsPar}
+              </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: theme.colors.textSecondary,
+                  textAlign: "center",
+                  marginTop: 4,
+                }}
+              >
+                {totalShots} shots • {totalPar} par
+              </Text>
+            </View>
+          );
+        })()}
       </ScrollView>
 
       {/* Shot Logging Modal */}
@@ -907,7 +970,7 @@ export default function RoundLoggerScreen() {
             </View>
           </ScrollView>
 
-          {/* Log Shot Button */}
+          {/* Shot Action Buttons */}
           <View
             style={{
               paddingHorizontal: 24,
@@ -916,10 +979,15 @@ export default function RoundLoggerScreen() {
               backgroundColor: theme.colors.background,
               borderTopWidth: 1,
               borderTopColor: theme.colors.border,
+              gap: 12,
             }}
           >
+            {/* Save Shot Button */}
             <TouchableOpacity
-              onPress={handleSaveShot}
+              onPress={() => {
+                console.log("SAVE SHOT BUTTON PRESSED");
+                handleSaveShot();
+              }}
               activeOpacity={0.9}
               disabled={!selectedClub}
               style={{
@@ -947,9 +1015,37 @@ export default function RoundLoggerScreen() {
                     color: "#FFFFFF",
                   }}
                 >
-                  Log Shot
+                  Save Shot
                 </Text>
               </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Done with Hole Button */}
+            <TouchableOpacity
+              onPress={() => {
+                console.log("DONE WITH HOLE BUTTON PRESSED");
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setShowShotModal(false);
+              }}
+              activeOpacity={0.9}
+              style={{
+                borderRadius: 16,
+                backgroundColor: theme.colors.glass,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+                paddingVertical: 18,
+                alignItems: "center",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 18,
+                  fontWeight: theme.typography.weights.label,
+                  color: theme.colors.text,
+                }}
+              >
+                Done with Hole
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
