@@ -1,14 +1,26 @@
+/**
+ * User Queries and Mutations
+ *
+ * Provides authenticated user operations including profile management.
+ * All functions use getAuthUserId to ensure proper authentication checks.
+ *
+ * @see https://labs.convex.dev/auth/authz
+ */
+
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { auth } from "./auth.config";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
- * Get the current authenticated user
+ * Get the current authenticated user (me query)
+ * Returns null if not authenticated
+ *
+ * @see https://labs.convex.dev/auth/api-reference#react
  */
-export const getCurrentUser = query({
+export const me = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await auth.getUserId(ctx);
+    const userId = await getAuthUserId(ctx);
     if (!userId) {
       return null;
     }
@@ -17,7 +29,22 @@ export const getCurrentUser = query({
 });
 
 /**
- * Get user by ID
+ * Legacy alias for me query
+ * @deprecated Use 'me' instead
+ */
+export const getCurrentUser = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      return null;
+    }
+    return await ctx.db.get(userId);
+  },
+});
+
+/**
+ * Get user by ID (public query)
  */
 export const getUser = query({
   args: { userId: v.id("users") },
@@ -27,7 +54,8 @@ export const getUser = query({
 });
 
 /**
- * Update current user profile
+ * Update current user's profile
+ * Creates profile if it doesn't exist
  */
 export const updateProfile = mutation({
   args: {
@@ -36,9 +64,9 @@ export const updateProfile = mutation({
     bio: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = await auth.getUserId(ctx);
+    const userId = await getAuthUserId(ctx);
     if (!userId) {
-      throw new Error("Not authenticated");
+      throw new Error("Not authenticated - sign in required");
     }
 
     // Get or create user profile
@@ -68,11 +96,12 @@ export const updateProfile = mutation({
 
 /**
  * Get current user's profile
+ * Returns null if not authenticated or profile doesn't exist
  */
 export const getCurrentUserProfile = query({
   args: {},
   handler: async (ctx) => {
-    const userId = await auth.getUserId(ctx);
+    const userId = await getAuthUserId(ctx);
     if (!userId) {
       return null;
     }
