@@ -26,19 +26,45 @@
 
 import { convexAuth } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
+import type { Provider } from "@auth/core/providers";
+import Google from "@auth/core/providers/google";
+import Apple from "@auth/core/providers/apple";
 
-// SIMPLIFIED: Only Password provider for now
-// OAuth providers (Apple, Google) can be added later once this works
+const providers: Provider[] = [];
 
+// Password provider (always available)
+providers.push(
+  Password({
+    verify: async ({ password }) => {
+      if (password.length < 8) {
+        throw new Error("Password must be at least 8 characters long");
+      }
+      return true;
+    },
+  })
+);
+
+// Include OAuth providers ONLY when fully configured and CALL the factories
+if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
+  providers.push(
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+    })
+  );
+}
+
+if (process.env.AUTH_APPLE_ID && process.env.AUTH_APPLE_SECRET) {
+  providers.push(
+    Apple({
+      clientId: process.env.AUTH_APPLE_ID!,
+      clientSecret: process.env.AUTH_APPLE_SECRET!,
+    })
+  );
+}
+
+// Explicitly pass env so @auth/core doesn't receive undefined
 export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
-  providers: [
-    Password({
-      verify: async ({ password }) => {
-        if (password.length < 8) {
-          throw new Error("Password must be at least 8 characters long");
-        }
-        return true;
-      },
-    }),
-  ],
+  providers,                 // Password only initially, OAuth when configured
+  env: process.env as any,   // <- critical to avoid env = undefined
 });
