@@ -2,20 +2,23 @@
  * Convex Auth Configuration
  *
  * Configures authentication for mobile and web apps with multiple providers:
- * - Email OTP via Resend (recommended for mobile)
+ * - Password (email + password, always available)
  * - Apple Sign-In (iOS native)
  * - Google Sign-In (cross-platform)
  *
- * Environment variables required (set via: npx convex env set KEY value):
- * - AUTH_RESEND_KEY: Resend API key (https://resend.com/api-keys)
- * - AUTH_APPLE_CLIENT_ID: Apple Service ID
- * - AUTH_APPLE_CLIENT_SECRET: Apple private key (generated)
- * - AUTH_GOOGLE_CLIENT_ID: Google OAuth client ID
- * - AUTH_GOOGLE_CLIENT_SECRET: Google OAuth client secret
+ * Environment variables (set via: npx convex env set KEY value):
+ * - AUTH_APPLE_ID: Apple Service ID
+ * - AUTH_APPLE_SECRET: Apple private key (generated JWT)
+ * - AUTH_GOOGLE_ID: Google OAuth client ID
+ * - AUTH_GOOGLE_SECRET: Google OAuth client secret
+ * - SITE_URL: Your app's URL (for OAuth redirects)
  *
  * OAuth callback URLs (configure in provider dashboards):
  * - Apple: https://<deployment>.convex.site/api/auth/callback/apple
  * - Google: https://<deployment>.convex.site/api/auth/callback/google
+ *
+ * NOTE: Providers are only loaded if their env vars exist. This prevents
+ * @auth/core from trying to uppercase undefined values during initialization.
  *
  * @see https://labs.convex.dev/auth/config
  * @see https://labs.convex.dev/auth/config/oauth
@@ -26,11 +29,12 @@ import { Password } from "@convex-dev/auth/providers/Password";
 import Apple from "@auth/core/providers/apple";
 import Google from "@auth/core/providers/google";
 
-// Build providers array conditionally based on available environment variables
-const providers = [
-  // Email OTP via Resend (primary mobile auth method)
-  // TODO: Integrate ResendOTP from ./ResendOTP.ts
-  // For now using Password as fallback
+// Conditionally load OAuth providers only if their env vars exist
+// This prevents @auth/core env defaulting errors when vars are missing
+const providers: any[] = [];
+
+// Password provider (always available as baseline)
+providers.push(
   Password({
     verify: async ({ password }) => {
       if (password.length < 8) {
@@ -38,33 +42,26 @@ const providers = [
       }
       return true;
     },
-  }),
-];
+  })
+);
 
-// Only add Apple if credentials are configured
-// Requires: AUTH_APPLE_CLIENT_ID, AUTH_APPLE_CLIENT_SECRET
-// @see https://labs.convex.dev/auth/config/oauth#apple
-if (process.env.AUTH_APPLE_CLIENT_ID && process.env.AUTH_APPLE_CLIENT_SECRET) {
+// Apple Sign-In (only if configured)
+if (process.env.AUTH_APPLE_ID && process.env.AUTH_APPLE_SECRET) {
   providers.push(
     Apple({
-      clientId: process.env.AUTH_APPLE_CLIENT_ID,
-      clientSecret: process.env.AUTH_APPLE_CLIENT_SECRET,
+      // Minimal safe profile mapping
+      profile(profile: any) {
+        return { id: profile.sub, name: profile.name, email: profile.email };
+      },
     })
   );
 }
 
-// Only add Google if credentials are configured
-// Requires: AUTH_GOOGLE_CLIENT_ID, AUTH_GOOGLE_CLIENT_SECRET
-// @see https://labs.convex.dev/auth/config/oauth
-if (process.env.AUTH_GOOGLE_CLIENT_ID && process.env.AUTH_GOOGLE_CLIENT_SECRET) {
-  providers.push(
-    Google({
-      clientId: process.env.AUTH_GOOGLE_CLIENT_ID,
-      clientSecret: process.env.AUTH_GOOGLE_CLIENT_SECRET,
-    })
-  );
+// Google Sign-In (only if configured)
+if (process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET) {
+  providers.push(Google({})); // CALL the factory
 }
 
-export const { auth, signIn, signOut, store } = convexAuth({
-  providers,
+export const { auth, signIn, signOut, store, isAuthenticated } = convexAuth({
+  providers, // Empty array is fine - Password will be the only provider initially
 });
