@@ -26,34 +26,45 @@ import { Password } from "@convex-dev/auth/providers/Password";
 import Apple from "@auth/core/providers/apple";
 import Google from "@auth/core/providers/google";
 
-export const { auth, signIn, signOut, store } = convexAuth({
-  providers: [
-    // Email OTP via Resend (primary mobile auth method)
-    // TODO: Integrate ResendOTP from ./ResendOTP.ts
-    // For now using Password as fallback
-    Password({
-      verify: async ({ password }) => {
-        if (password.length < 8) {
-          throw new Error("Password must be at least 8 characters long");
-        }
-        return true;
-      },
-    }),
+// Build providers array conditionally based on available environment variables
+const providers = [
+  // Email OTP via Resend (primary mobile auth method)
+  // TODO: Integrate ResendOTP from ./ResendOTP.ts
+  // For now using Password as fallback
+  Password({
+    verify: async ({ password }) => {
+      if (password.length < 8) {
+        throw new Error("Password must be at least 8 characters long");
+      }
+      return true;
+    },
+  }),
+];
 
-    // Apple Sign-In (iOS native)
-    // Requires: AUTH_APPLE_CLIENT_ID, AUTH_APPLE_CLIENT_SECRET
-    // @see https://labs.convex.dev/auth/config/oauth#apple
+// Only add Apple if credentials are configured
+// Requires: AUTH_APPLE_CLIENT_ID, AUTH_APPLE_CLIENT_SECRET
+// @see https://labs.convex.dev/auth/config/oauth#apple
+if (process.env.AUTH_APPLE_CLIENT_ID && process.env.AUTH_APPLE_CLIENT_SECRET) {
+  providers.push(
     Apple({
       clientId: process.env.AUTH_APPLE_CLIENT_ID,
       clientSecret: process.env.AUTH_APPLE_CLIENT_SECRET,
-    }),
+    })
+  );
+}
 
-    // Google Sign-In (cross-platform)
-    // Requires: AUTH_GOOGLE_CLIENT_ID, AUTH_GOOGLE_CLIENT_SECRET
-    // @see https://labs.convex.dev/auth/config/oauth
+// Only add Google if credentials are configured
+// Requires: AUTH_GOOGLE_CLIENT_ID, AUTH_GOOGLE_CLIENT_SECRET
+// @see https://labs.convex.dev/auth/config/oauth
+if (process.env.AUTH_GOOGLE_CLIENT_ID && process.env.AUTH_GOOGLE_CLIENT_SECRET) {
+  providers.push(
     Google({
       clientId: process.env.AUTH_GOOGLE_CLIENT_ID,
       clientSecret: process.env.AUTH_GOOGLE_CLIENT_SECRET,
-    }),
-  ],
+    })
+  );
+}
+
+export const { auth, signIn, signOut, store } = convexAuth({
+  providers,
 });
