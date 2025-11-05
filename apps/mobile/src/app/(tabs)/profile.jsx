@@ -32,73 +32,10 @@ export default function ProfileScreen() {
   const { pastRounds, resetCurrentRound, getTotalShots } = useRound();
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
 
-  const calculateStats = () => {
-    if (pastRounds.length === 0) return null;
-
-    const totalRounds = pastRounds.length;
-    const totalShots = pastRounds.reduce(
-      (total, round) => total + getTotalShots(round),
-      0,
-    );
-
-    // Calculate average par per round
-    const avgParPerRound =
-      pastRounds.reduce((total, round) => {
-        return (
-          total +
-          round.holes.reduce((holeTotal, hole) => holeTotal + hole.par, 0)
-        );
-      }, 0) / totalRounds;
-
-    const avgShotsPerRound = Math.round(totalShots / totalRounds);
-    const avgRelativeToPar = Math.round(avgShotsPerRound - avgParPerRound);
-
-    // Count shot qualities (miss types only)
-    const qualityCounts = {};
-    const missTypes = ["slice", "hook", "chunk", "thin", "fat"];
-
-    // Calculate average shot quality (1-10 scale)
-    let totalQuality = 0;
-    let qualityCount = 0;
-
-    pastRounds.forEach((round) => {
-      round.holes.forEach((hole) => {
-        hole.shots.forEach((shot) => {
-          // Count shot quality ratings
-          if (shot.quality !== undefined && shot.quality !== null) {
-            totalQuality += shot.quality;
-            qualityCount++;
-          }
-
-          // Count miss types
-          shot.qualities.forEach((quality) => {
-            if (missTypes.includes(quality)) {
-              qualityCounts[quality] = (qualityCounts[quality] || 0) + 1;
-            }
-          });
-        });
-      });
-    });
-
-    const avgShotQuality = qualityCount > 0 ? (totalQuality / qualityCount).toFixed(1) : null;
-
-    const mostCommonMiss =
-      Object.entries(qualityCounts).length > 0
-        ? Object.entries(qualityCounts).sort(([, a], [, b]) => b - a)[0][0]
-        : null;
-
-    return {
-      totalRounds,
-      totalShots,
-      avgShotsPerRound,
-      avgRelativeToPar,
-      avgShotQuality,
-      mostCommonMiss,
-      missCount: mostCommonMiss ? qualityCounts[mostCommonMiss] : 0,
-    };
-  };
-
-  const stats = calculateStats();
+  const quickStats = pastRounds.length > 0 ? {
+    totalRounds: pastRounds.length,
+    totalShots: pastRounds.reduce((total, round) => total + getTotalShots(round), 0),
+  } : null;
 
   const handleClearData = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -334,8 +271,8 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Stats Section */}
-        {stats ? (
+        {/* Quick Stats Summary */}
+        {quickStats && (
           <View style={{ marginBottom: 32 }}>
             <Text
               style={{
@@ -347,112 +284,84 @@ export default function ProfileScreen() {
                 letterSpacing: 0.5,
               }}
             >
-              Performance Stats
+              Quick Summary
             </Text>
 
-            <StatCard
-              icon={Trophy}
-              title="Rounds Played"
-              value={stats.totalRounds}
-              subtitle="Total logged rounds"
-            />
+            <View style={{ flexDirection: "row", marginBottom: 12 }}>
+              <View style={{ flex: 1, marginRight: 6 }}>
+                <StatCard
+                  icon={Trophy}
+                  title="Rounds"
+                  value={quickStats.totalRounds}
+                  subtitle="Total played"
+                />
+              </View>
+              <View style={{ flex: 1, marginLeft: 6 }}>
+                <StatCard
+                  icon={Target}
+                  title="Shots"
+                  value={quickStats.totalShots}
+                  subtitle="Total logged"
+                />
+              </View>
+            </View>
 
-            <StatCard
-              icon={Target}
-              title="Scoring Average"
-              value={
-                stats.avgRelativeToPar > 0
-                  ? `+${stats.avgRelativeToPar}`
-                  : stats.avgRelativeToPar
-              }
-              subtitle="Relative to par"
-              color={
-                stats.avgRelativeToPar <= 0
-                  ? theme.colors.scoreGood
-                  : theme.colors.scoreOkay
-              }
-            />
-
-            {stats.avgShotQuality && (
-              <StatCard
-                icon={Target}
-                title="Average Shot Quality"
-                value={`${stats.avgShotQuality}/10`}
-                subtitle={
-                  stats.avgShotQuality >= 7
-                    ? "Great ball striking"
-                    : stats.avgShotQuality >= 5
-                      ? "Solid contact"
-                      : "Room for improvement"
-                }
-                color={
-                  stats.avgShotQuality >= 7
-                    ? theme.colors.scoreGood
-                    : stats.avgShotQuality >= 5
-                      ? theme.colors.scoreOkay
-                      : theme.colors.scoreBad
-                }
-              />
-            )}
-
-            <StatCard
-              icon={TrendingUp}
-              title="Most Common Miss"
-              value={stats.mostCommonMiss || "None"}
-              subtitle={
-                stats.missCount > 0
-                  ? `${stats.missCount} occurrences`
-                  : "Clean ball striking"
-              }
-              color={
-                stats.mostCommonMiss
-                  ? theme.colors.scoreBad
-                  : theme.colors.scoreGood
-              }
-            />
-          </View>
-        ) : (
-          <View
-            style={{
-              backgroundColor: theme.colors.glassThick,
-              borderRadius: theme.glass.cornerRadius,
-              padding: 24,
-              marginBottom: 32,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-              shadowColor: theme.colors.shadow,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 1,
-              shadowRadius: 8,
-              elevation: 4,
-            }}
-          >
-            <Target
-              size={48}
-              color={theme.colors.textTertiary}
-              style={{ marginBottom: 16 }}
-            />
-            <Text
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/analytics")}
               style={{
-                fontSize: 18,
-                fontWeight: theme.typography.weights.label,
-                color: theme.colors.text,
-                textAlign: "center",
-                marginBottom: 8,
+                backgroundColor: theme.colors.glass,
+                borderRadius: theme.glass.cornerRadius,
+                padding: 20,
+                borderWidth: 1,
+                borderColor: theme.colors.border,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                shadowColor: theme.colors.shadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.5,
+                shadowRadius: 4,
+                elevation: 2,
               }}
+              activeOpacity={0.7}
             >
-              No Stats Yet
-            </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                color: theme.colors.textSecondary,
-                textAlign: "center",
-              }}
-            >
-              Play some rounds to see your progress
-            </Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 20,
+                    backgroundColor: theme.colors.primary,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginRight: 16,
+                  }}
+                >
+                  <TrendingUp size={20} color="#FFFFFF" />
+                </View>
+                <View>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: theme.typography.weights.title,
+                      color: theme.colors.text,
+                      marginBottom: 2,
+                    }}
+                  >
+                    View Analytics
+                  </Text>
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: theme.colors.textSecondary,
+                    }}
+                  >
+                    See detailed performance insights
+                  </Text>
+                </View>
+              </View>
+              <ChevronRight size={20} color={theme.colors.textTertiary} />
+            </TouchableOpacity>
           </View>
         )}
 

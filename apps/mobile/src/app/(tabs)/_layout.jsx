@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { BookOpen, Plus, User } from "lucide-react-native";
+import { BookOpen, Plus, BarChart3, User } from "lucide-react-native";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -49,6 +49,13 @@ export default function TabsLayout() {
         options={{
           title: "New Round",
           tabBarIcon: ({ color, size }) => <Plus color={color} size={24} />,
+        }}
+      />
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          title: "Analytics",
+          tabBarIcon: ({ color, size }) => <BarChart3 color={color} size={24} />,
         }}
       />
       <Tabs.Screen
