@@ -16,7 +16,16 @@
 import { Resend } from "resend";
 import { alphabet, generateRandomString } from "oslo/crypto";
 
-const resendClient = new Resend(process.env.AUTH_RESEND_KEY!);
+// Lazy initialization - only create client when needed (after env var is set)
+function getResendClient() {
+  if (!process.env.AUTH_RESEND_KEY) {
+    throw new Error(
+      "AUTH_RESEND_KEY environment variable not set. " +
+      "Set it via: npx convex env set AUTH_RESEND_KEY <your-key>"
+    );
+  }
+  return new Resend(process.env.AUTH_RESEND_KEY);
+}
 
 export const ResendOTP = {
   id: "resend-otp",
@@ -25,6 +34,7 @@ export const ResendOTP = {
    * Send OTP code to user's email
    */
   async sendVerificationCode(email: string, code: string) {
+    const resendClient = getResendClient();
     const { data, error } = await resendClient.emails.send({
       from: "Chunked Golf <onboarding@updates.chunkedgolf.app>", // Update with your domain
       to: [email],
