@@ -1,3 +1,21 @@
+/**
+ * Root Layout
+ *
+ * Provider hierarchy (outer to inner):
+ * 1. ConvexClientProvider - Database + Auth (feature-flagged)
+ * 2. ThemeProvider - Theme and dark mode
+ * 3. RoundProvider - Golf round state
+ * 4. QueryClientProvider - React Query for data fetching
+ * 5. GestureHandlerRootView - Gesture handling
+ * 6. Stack - Navigation
+ *
+ * The old auth system (useAuth from Zustand) remains active until
+ * Convex Auth is fully tested and enabled via feature flag.
+ *
+ * @see Expo Router: https://docs.expo.dev/router/introduction/
+ * @see Convex: https://docs.convex.dev/quickstart/react-native
+ */
+
 import { useAuth } from "@/utils/auth/useAuth";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -8,6 +26,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { RoundProvider } from "@/contexts/RoundContext";
 import DataConsentModal from "@/components/DataConsentModal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import ConvexClientProvider from "@/convex/ConvexProvider";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -61,25 +80,27 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider>
-      <RoundProvider>
-        <QueryClientProvider client={queryClient}>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <Stack
-              screenOptions={{ headerShown: false }}
-              initialRouteName="index"
-            >
-              <Stack.Screen name="index" />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            </Stack>
+    <ConvexClientProvider>
+      <ThemeProvider>
+        <RoundProvider>
+          <QueryClientProvider client={queryClient}>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <Stack
+                screenOptions={{ headerShown: false }}
+                initialRouteName="index"
+              >
+                <Stack.Screen name="index" />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              </Stack>
 
-            <DataConsentModal
-              visible={showConsentModal}
-              onClose={handleConsentModalClose}
-            />
-          </GestureHandlerRootView>
-        </QueryClientProvider>
-      </RoundProvider>
-    </ThemeProvider>
+              <DataConsentModal
+                visible={showConsentModal}
+                onClose={handleConsentModalClose}
+              />
+            </GestureHandlerRootView>
+          </QueryClientProvider>
+        </RoundProvider>
+      </ThemeProvider>
+    </ConvexClientProvider>
   );
 }

@@ -60,7 +60,9 @@
 		"extra": {
 			"router": {
 				"origin": false
-			}
+			},
+			"convexUrl": "${EXPO_PUBLIC_CONVEX_URL}",
+			"convexAuthEnabled": "${EXPO_PUBLIC_CONVEX_AUTH_ENABLED}"
 		},
 		"runtimeVersion": {
 			"policy": "appVersion"
