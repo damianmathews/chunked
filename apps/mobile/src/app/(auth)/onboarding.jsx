@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -16,12 +18,22 @@ import { router } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSession } from "@/hooks/useSession";
 
 export default function OnboardingScreen() {
   const theme = useTheme();
+  const { isAuthenticated, signInWithOAuth, isSupabaseEnabled } = useSession();
   const [handicap, setHandicap] = useState("");
   const [homeCourse, setHomeCourse] = useState("");
   const [yearsPlaying, setYearsPlaying] = useState("");
+  const [isSigningIn, setIsSigningIn] = useState(false);
+
+  // When user successfully authenticates, save data and complete onboarding
+  useEffect(() => {
+    if (isAuthenticated) {
+      saveUserDataAndComplete();
+    }
+  }, [isAuthenticated]);
 
   const saveUserDataAndComplete = async () => {
     try {
@@ -48,9 +60,27 @@ export default function OnboardingScreen() {
 
   const handleGoogleSignIn = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // TODO: Implement Google Sign In
-    console.log("Google Sign In");
-    await saveUserDataAndComplete();
+
+    if (!isSupabaseEnabled) {
+      // If Supabase not enabled, just skip to app (legacy behavior)
+      console.log("Supabase not enabled, skipping auth");
+      await saveUserDataAndComplete();
+      return;
+    }
+
+    setIsSigningIn(true);
+    try {
+      await signInWithOAuth("google");
+      // Success - useEffect will handle navigation
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+      setIsSigningIn(false);
+      Alert.alert(
+        "Sign In Failed",
+        error.message || "Could not sign in with Google. Please try again.",
+        [{ text: "OK" }]
+      );
+    }
   };
 
   const handleTwitterSignIn = async () => {
@@ -238,19 +268,26 @@ export default function OnboardingScreen() {
               },
             ]}
             activeOpacity={0.8}
+            disabled={isSigningIn}
           >
-            <Ionicons name="logo-google" size={22} color="#DB4437" />
-            <Text
-              style={[
-                styles.authButtonText,
-                {
-                  color: theme.colors.text,
-                  fontWeight: theme.typography.weights.label,
-                },
-              ]}
-            >
-              Continue with Google
-            </Text>
+            {isSigningIn ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <>
+                <Ionicons name="logo-google" size={22} color="#DB4437" />
+                <Text
+                  style={[
+                    styles.authButtonText,
+                    {
+                      color: theme.colors.text,
+                      fontWeight: theme.typography.weights.label,
+                    },
+                  ]}
+                >
+                  Continue with Google
+                </Text>
+              </>
+            )}
           </TouchableOpacity>
 
           {/* X (Twitter) Sign In */}

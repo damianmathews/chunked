@@ -1,24 +1,25 @@
 /**
  * Unified Session Hook
  *
- * Bridges Convex Auth with existing Zustand auth system.
- * When Convex is enabled and user is signed in via Convex, uses that.
+ * Bridges Supabase Auth with existing Zustand auth system.
+ * When Supabase is enabled and user is signed in via Supabase, uses that.
  * Otherwise falls back to existing Zustand auth.
  *
  * This allows progressive migration: old code continues working,
- * new code can use Convex auth, and both systems coexist.
+ * new code can use Supabase auth, and both systems coexist.
  *
  * Status values:
  * - "loading": Auth state is being determined
  * - "signedOut": User is not authenticated
- * - "signedIn": User is authenticated (via Convex or Zustand)
+ * - "signedIn": User is authenticated (via Supabase or Zustand)
  *
- * @see https://labs.convex.dev/auth/api-reference#react
+ * @see https://supabase.com/docs/guides/auth/quickstarts/react-native
  */
 
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useConvexAuth } from "convex/react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { useAuth as useZustandAuth } from "@/utils/auth/useAuth";
+import { Session } from "@supabase/supabase-js";
 import Constants from "expo-constants";
 
 type SessionStatus = "loading" | "signedOut" | "signedIn";
@@ -30,22 +31,24 @@ export interface UseSessionReturn {
   isAuthenticated: boolean;
   /** Is auth state still loading? */
   isLoading: boolean;
-  /** User data (from Convex or Zustand) */
+  /** User data (from Supabase or Zustand) */
   user: any;
-  /** Sign in function */
-  signIn: (...args: any[]) => any;
+  /** Supabase session */
+  session: Session | null;
+  /** Sign in with OAuth provider */
+  signInWithOAuth: (provider: "google" | "apple") => Promise<void>;
   /** Sign out function */
   signOut: () => Promise<void>;
-  /** Is Convex auth enabled? */
-  isConvexEnabled: boolean;
+  /** Is Supabase auth enabled? */
+  isSupabaseEnabled: boolean;
 }
 
 /**
- * Check if Convex Auth is enabled via feature flag
+ * Check if Supabase Auth is enabled via feature flag
  */
-function isConvexAuthEnabled(): boolean {
-  const flagFromConfig = Constants.expoConfig?.extra?.convexAuthEnabled;
-  const flagFromEnv = process.env.EXPO_PUBLIC_CONVEX_AUTH_ENABLED;
+function isSupabaseAuthEnabled(): boolean {
+  const flagFromConfig = Constants.expoConfig?.extra?.supabaseAuthEnabled;
+  const flagFromEnv = process.env.EXPO_PUBLIC_SUPABASE_AUTH_ENABLED;
 
   // Check if explicitly enabled (handle string "true")
   return (
@@ -61,39 +64,80 @@ function isConvexAuthEnabled(): boolean {
  *
  * Usage:
  * ```tsx
- * const { status, isAuthenticated, signIn, signOut } = useSession();
+ * const { status, isAuthenticated, signInWithOAuth, signOut } = useSession();
  *
  * if (status === "loading") return <LoadingSpinner />;
- * if (status === "signedOut") return <SignInButton onPress={signIn} />;
+ * if (status === "signedOut") return <SignInButton onPress={() => signInWithOAuth('google')} />;
  * return <AuthenticatedContent />;
  * ```
  */
 export function useSession(): UseSessionReturn {
-  // Check if Convex is enabled
-  const convexEnabled = isConvexAuthEnabled();
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Get Convex auth state (always call hooks, conditional logic below)
-  const convexAuth = useConvexAuth();
-  const convexAuthActions = useAuthActions();
+  // Check if Supabase is enabled
+  const supabaseEnabled = isSupabaseAuthEnabled();
 
   // Get Zustand auth state (legacy system)
   const zustandAuth = useZustandAuth();
 
+  useEffect(() => {
+    if (!supabaseEnabled) {
+      setLoading(false);
+      return;
+    }
+
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabaseEnabled]);
+
+  // Sign in with OAuth
+  const signInWithOAuth = async (provider: "google" | "apple") => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: "chunked://auth-callback",
+        skipBrowserRedirect: false,
+      },
+    });
+    if (error) throw error;
+  };
+
+  // Sign out
+  const signOut = async () => {
+    if (supabaseEnabled && session) {
+      await supabase.auth.signOut();
+    }
+    // Also sign out from Zustand (if using legacy)
+    if (!supabaseEnabled) {
+      await zustandAuth.signOut();
+    }
+  };
+
   // Determine which system to use
-  if (convexEnabled && convexAuth.isAuthenticated) {
-    // User signed in via Convex
+  if (supabaseEnabled && session) {
+    // User signed in via Supabase
     return {
-      status: convexAuth.isLoading
-        ? "loading"
-        : convexAuth.isAuthenticated
-        ? "signedIn"
-        : "signedOut",
-      isAuthenticated: convexAuth.isAuthenticated,
-      isLoading: convexAuth.isLoading,
-      user: null, // TODO: Fetch from Convex useQuery(api.users.me)
-      signIn: convexAuthActions.signIn,
-      signOut: convexAuthActions.signOut,
-      isConvexEnabled: true,
+      status: loading ? "loading" : session ? "signedIn" : "signedOut",
+      isAuthenticated: !!session,
+      isLoading: loading,
+      user: session?.user || null,
+      session,
+      signInWithOAuth,
+      signOut,
+      isSupabaseEnabled: true,
     };
   }
 
@@ -107,9 +151,12 @@ export function useSession(): UseSessionReturn {
     isAuthenticated: zustandAuth.isAuthenticated || false,
     isLoading: !zustandAuth.isReady,
     user: zustandAuth.auth,
-    signIn: zustandAuth.signIn,
+    session: null,
+    signInWithOAuth: async () => {
+      throw new Error("Supabase auth not enabled");
+    },
     signOut: zustandAuth.signOut,
-    isConvexEnabled: false,
+    isSupabaseEnabled: false,
   };
 }
 
